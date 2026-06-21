@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>混合检索与推荐系统</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+        }
+
+        .stat-info h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-info p {
+            color: #666;
+            font-size: 0.75rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .panel-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+
+        .search-box, .fusion-controls {
+            padding: 20px;
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .search-box input, .fusion-controls input, .fusion-controls select {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+        }
+
+        .search-box input:focus, .fusion-controls input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(17,153,142,0.4);
+        }
+
+        .method-selector {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .method-selector label {
+            font-weight: 600;
+            color: #333;
+            margin-right: 10px;
+        }
+
+        .method-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .method-btn {
+            padding: 6px 14px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .method-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .user-selector {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .user-selector label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .user-selector select, .user-selector input {
+            padding: 10px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+
+        .user-profile {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            margin: 0 20px 20px 20px;
+            border-radius: 12px;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .pref-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .pref-tag {
+            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #667eea;
+        }
+
+        .recommend-actions {
+            padding: 0 20px 20px 20px;
+        }
+
+        .results-container {
+            padding: 20px;
+        }
+
+        .results-container h3 {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .results-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .result-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+            border-left: 4px solid #667eea;
+            cursor: pointer;
+        }
+
+        .result-item:hover {
+            background: #e8e8e8;
+            transform: translateX(5px);
+        }
+
+        .result-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .result-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.7rem;
+            color: #888;
+            flex-wrap: wrap;
+        }
+
+        .result-category {
+            background: #e8e8e8;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .result-score {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .result-keywords {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .keyword-tag {
+            background: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            color: #666;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .fusion-panel {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .fusion-controls {
+            display: flex;
+            gap: 10px;
+            padding: 20px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.85rem;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            width: 90%;
+            max-width: 800px;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.3s ease-out;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 25px;
+            border-radius: 24px 24px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 1.3rem;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-category {
+            display: inline-block;
+            background: #667eea20;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .action-btn.favorited {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .action-btn.liked {
+            background: #e91e63;
+            color: white;
+        }
+
+        .action-btn.following {
+            background: #4caf50;
+            color: white;
+        }
+
+        .comment-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            margin: 10px 0;
+            resize: vertical;
+        }
+
+        .comment-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .comment-user {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 0.85rem;
+        }
+
+        .comment-time {
+            font-size: 0.7rem;
+            color: #999;
+            margin-left: 10px;
+        }
+
+        .comment-content {
+            margin-top: 5px;
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .fusion-controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🔍 混合检索与推荐系统</h1>
+            <p>融合 TF-IDF · BM25 · 布尔检索 · 短语检索 · 语义检索 + 个性化推荐</p>
+        </header>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card"><div class="stat-icon">📰</div><div class="stat-info"><h3 id="totalNews">-</h3><p>新闻总数</p></div></div>
+            <div class="stat-card"><div class="stat-icon">👤</div><div class="stat-info"><h3 id="totalUsers">-</h3><p>用户总数</p></div></div>
+            <div class="stat-card"><div class="stat-icon">👁️</div><div class="stat-info"><h3 id="totalViews">-</h3><p>总浏览量</p></div></div>
+            <div class="stat-card"><div class="stat-icon">❤️</div><div class="stat-info"><h3 id="totalLikes">-</h3><p>总点赞</p></div></div>
+            <div class="stat-card"><div class="stat-icon">🔄</div><div class="stat-info"><h3 id="totalShares">-</h3><p>总分享</p></div></div>
+            <div class="stat-card"><div class="stat-icon">⚙️</div><div class="stat-info"><h3>5</h3><p>检索方法</p></div></div>
+        </div>
+
+        <div class="main-content">
+            <div class="panel search-panel">
+                <div class="panel-header"><h2>📖 信息检索</h2><span class="badge">5种检索算法</span></div>
+                <div class="search-box">
+                    <input type="text" id="searchQuery" placeholder="输入查询词，如：科技、健康、汽车..." onkeypress="if(event.key==='Enter') doSearch()">
+                    <button class="btn btn-primary" onclick="doSearch()">检索</button>
+                </div>
+                <div class="method-selector">
+                    <label>检索算法：</label>
+                    <div class="method-buttons">
+                        <button class="method-btn active" data-method="semantic">🧠 语义检索</button>
+                        <button class="method-btn" data-method="tfidf">📊 TF-IDF</button>
+                        <button class="method-btn" data-method="bm25">📈 BM25</button>
+                        <button class="method-btn" data-method="boolean">🔍 布尔检索</button>
+                        <button class="method-btn" data-method="phrase">📝 短语检索</button>
+                    </div>
+                </div>
+                <div class="results-container">
+                    <h3>检索结果 <span id="searchResultCount"></span></h3>
+                    <div id="searchResults" class="results-list"><div class="empty-state">✨ 输入查询词开始检索</div></div>
+                </div>
+            </div>
+
+            <div class="panel recommend-panel">
+                <div class="panel-header"><h2>🎯 个性化推荐</h2><span class="badge">Switch混合策略</span></div>
+                <div class="user-selector">
+                    <label>选择用户：</label>
+                    <input type="text" id="userSearchInput" placeholder="搜索用户ID" style="width:120px">
+                    <button onclick="searchUsers()" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd;background:white;cursor:pointer;">🔍</button>
+                    <select id="userId" onchange="loadUserInfo()" style="min-width:120px"><option value="">-- 请选择 --</option></select>
+                </div>
+                <div id="userProfile" class="user-profile" style="display:none;">
+                    <div class="profile-header"><span class="user-icon">👤</span><div><strong id="userName"></strong><span class="activity-level" id="userActivity"></span></div></div>
+                    <div class="pref-tags" id="userPrefs"></div>
+                </div>
+                <div class="recommend-actions"><button class="btn btn-success" onclick="doRecommend()">🎯 为我推荐</button></div>
+                <div class="results-container">
+                    <h3>推荐结果 <span id="recommendResultCount"></span></h3>
+                    <div id="recommendResults" class="results-list"><div class="empty-state">👈 选择用户后点击推荐</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="fusion-panel">
+            <div class="panel-header"><h2>🚀 融合检索与推荐</h2><span class="badge">动态权重融合</span></div>
+            <div class="fusion-controls">
+                <input type="text" id="fusionQuery" placeholder="输入查询词" onkeypress="if(event.key==='Enter') doFusion()">
+                <select id="fusionUserId"><option value="">-- 选择用户 --</option></select>
+                <button class="btn btn-primary" onclick="doFusion()">融合检索</button>
+            </div>
+            <div class="results-container">
+                <h3>融合结果 <span id="fusionResultCount"></span></h3>
+                <div id="fusionResults" class="results-list"><div class="empty-state">🔗 输入查询并选择用户进行融合检索</div></div>
+            </div>
+        </div>
+
+        <footer class="footer"><p>混合检索与推荐系统 | 信息检索与推荐大作业</p></footer>
+    </div>
+
+    <!-- 详情模态框 -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="modalTitle">📄 新闻详情</h2><button class="close-btn" onclick="closeModal()">&times;</button></div>
+            <div class="modal-body" id="modalBody"><div style="text-align:center; padding:40px;">加载中...</div></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let currentMethod = 'semantic';
+        let currentArticleId = null;
+        let currentUserId = null;
+        let currentArticleData = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initMethodButtons();
+            loadStats();
+            loadUsers();
+        });
+
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API_BASE}/api/stats`);
+                const data = await res.json();
+                document.getElementById('totalNews').textContent = data.total_news || 0;
+                document.getElementById('totalUsers').textContent = data.total_users || 0;
+                document.getElementById('totalViews').textContent = (data.total_views/10000).toFixed(1) + 'w';
+                document.getElementById('totalLikes').textContent = (data.total_likes/1000).toFixed(1) + 'k';
+                document.getElementById('totalShares').textContent = data.total_shares || 0;
+            } catch(e) { console.log(e); }
+        }
+
+        async function loadUsers() {
+            try {
+                const res = await fetch(`${API_BASE}/api/users?page=1`);
+                const data = await res.json();
+                const userSelect = document.getElementById('userId');
+                const fusionSelect = document.getElementById('fusionUserId');
+                userSelect.innerHTML = '<option value="">-- 请选择用户 --</option>';
+                fusionSelect.innerHTML = '<option value="">-- 选择用户 --</option>';
+                data.users.forEach(user => { userSelect.appendChild(new Option(user, user)); fusionSelect.appendChild(new Option(user, user)); });
+            } catch(e) { console.error(e); }
+        }
+
+        async function searchUsers() {
+            const searchTerm = document.getElementById('userSearchInput').value;
+            if(!searchTerm) { loadUsers(); return; }
+            try {
+                const res = await fetch(`${API_BASE}/api/users?search=${searchTerm}`);
+                const data = await res.json();
+                const userSelect = document.getElementById('userId');
+                userSelect.innerHTML = '<option value="">-- 请选择用户 --</option>';
+                data.users.forEach(user => userSelect.appendChild(new Option(user, user)));
+                if(data.users.length === 1) { userSelect.value = data.users[0]; loadUserInfo(); }
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadUserInfo() {
+            const userId = document.getElementById('userId').value;
+            if(!userId) { document.getElementById('userProfile').style.display = 'none'; return; }
+            currentUserId = userId;
+            document.getElementById('fusionUserId').value = userId;
+            try {
+                const res = await fetch(`${API_BASE}/api/user_info?user_id=${userId}`);
+                const data = await res.json();
+                document.getElementById('userName').textContent = data.username || userId;
+                document.getElementById('userActivity').textContent = `活跃度: ${data.activity_level || 3} | 收藏${data.favorites_count || 0} | 点赞${data.likes_count || 0}`;
+                const prefsDiv = document.getElementById('userPrefs');
+                prefsDiv.innerHTML = '';
+                if(data.preferences) {
+                    Object.entries(data.preferences).forEach(([cat, score]) => {
+                        const tag = document.createElement('span'); tag.className = 'pref-tag';
+                        tag.textContent = `${cat} ${(score*100).toFixed(0)}%`; prefsDiv.appendChild(tag);
+                    });
+                }
+                document.getElementById('userProfile').style.display = 'block';
+            } catch(e) { console.error(e); }
+        }
+
+        function initMethodButtons() {
+            document.querySelectorAll('.method-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentMethod = btn.dataset.method;
+                });
+            });
+        }
+
+        async function doSearch() {
+            const query = document.getElementById('searchQuery').value.trim();
+            if(!query) { alert('请输入查询内容'); return; }
+            document.getElementById('searchResults').innerHTML = '<div class="empty-state">⏳ 检索中...</div>';
+            try {
+                const res = await fetch(`${API_BASE}/api/search`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, method: currentMethod, top_k: 10 })
+                });
+                const data = await res.json();
+                displayResults(data.results, 'searchResults');
+                document.getElementById('searchResultCount').textContent = `(${data.results.length}条)`;
+            } catch(e) { document.getElementById('searchResults').innerHTML = '<div class="empty-state">❌ 检索失败</div>'; }
+        }
+
+        async function doRecommend() {
+            const userId = document.getElementById('userId').value;
+            if(!userId) { alert('请选择用户'); return; }
+            document.getElementById('recommendResults').innerHTML = '<div class="empty-state">⏳ 推荐中...</div>';
+            try {
+                const res = await fetch(`${API_BASE}/api/recommend`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, top_k: 10 })
+                });
+                const data = await res.json();
+                displayResults(data.results, 'recommendResults');
+                document.getElementById('recommendResultCount').textContent = `(${data.results.length}条)`;
+            } catch(e) { document.getElementById('recommendResults').innerHTML = '<div class="empty-state">❌ 推荐失败</div>'; }
+        }
+
+        async function doFusion() {
+            const query = document.getElementById('fusionQuery').value.trim();
+            const userId = document.getElementById('fusionUserId').value;
+            if(!query) { alert('请输入查询内容'); return; }
+            if(!userId) { alert('请选择用户'); return; }
+            document.getElementById('fusionResults').innerHTML = '<div class="empty-state">⏳ 融合检索中...</div>';
+            try {
+                const res = await fetch(`${API_BASE}/api/fusion`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, user_id: userId, top_k: 10 })
+                });
+                const data = await res.json();
+                displayResults(data.results, 'fusionResults');
+                document.getElementById('fusionResultCount').textContent = `(${data.results.length}条)`;
+            } catch(e) { document.getElementById('fusionResults').innerHTML = '<div class="empty-state">❌ 融合失败</div>'; }
+        }
+
+        function displayResults(results, containerId) {
+            const container = document.getElementById(containerId);
+            if(!results || results.length === 0) { container.innerHTML = '<div class="empty-state">📭 未找到相关结果</div>'; return; }
+            container.innerHTML = results.map(item => `
+                <div class="result-item" onclick="showNewsDetail('${item.id}')">
+                    <div class="result-title">${escapeHtml(item.title)}</div>
+                    <div class="result-meta">
+                        <span class="result-category">📁 ${item.category || '未分类'}</span>
+                        <span>👁️ ${formatNumber(item.views || 0)}</span>
+                        <span>❤️ ${formatNumber(item.likes || 0)}</span>
+                        <span>🔄 ${formatNumber(item.shares || 0)}</span>
+                        <span class="result-score">⭐ ${((item.score || 0.5)*100).toFixed(1)}%</span>
+                    </div>
+                    <div class="result-keywords">${(item.keywords||[]).slice(0,3).map(kw => `<span class="keyword-tag">#${escapeHtml(kw)}</span>`).join('')}</div>
+                </div>
+            `).join('');
+        }
+
+        async function showNewsDetail(articleId) {
+            const userId = document.getElementById('userId').value || 'U00001';
+            const modal = document.getElementById('detailModal');
+            const modalBody = document.getElementById('modalBody');
+            modal.style.display = 'block';
+            modalBody.innerHTML = '<div style="text-align:center; padding:40px;">⏳ 加载中...</div>';
+            currentArticleId = articleId;
+            try {
+                const res = await fetch(`${API_BASE}/api/news_detail?id=${articleId}&user_id=${userId}`);
+                const data = await res.json();
+                if(data.error) { modalBody.innerHTML = `<div style="color:red;">❌ ${data.error}</div>`; return; }
+                currentArticleData = data;
+                modalBody.innerHTML = `
+                    <div><span class="modal-category">📁 ${data.category}</span>
+                    ${data.subcategories ? data.subcategories.map(s => `<span class="modal-category">🏷️ ${s}</span>`).join('') : ''}</div>
+                    <h3 style="margin-bottom:10px;">${escapeHtml(data.title)}</h3>
+                    <div style="color:#888; font-size:0.8rem; margin-bottom:15px;">
+                        ✍️ ${data.author} | 📅 ${data.publish_date} | 👁️ ${formatNumber(data.views)} | ❤️ ${formatNumber(data.likes)} | 🔄 ${formatNumber(data.shares)}
+                    </div>
+                    <div class="result-keywords" style="margin-bottom:15px;">
+                        ${(data.keywords||[]).map(kw => `<span class="keyword-tag">#${escapeHtml(kw)}</span>`).join('')}
+                    </div>
+                    <div style="background:#f8f9fa; padding:15px; border-radius:12px; line-height:1.6;">
+                        ${escapeHtml(data.content || '暂无详细内容').replace(/\n/g, '<br>')}
+                    </div>
+                    <div class="action-buttons">
+                        <button id="favoriteBtn" class="action-btn ${data.is_favorited ? 'favorited' : ''}" onclick="toggleFavorite()">⭐ ${data.is_favorited ? '已收藏' : '收藏'}</button>
+                        <button id="likeBtn" class="action-btn ${data.is_liked ? 'liked' : ''}" onclick="toggleLike()">❤️ ${data.is_liked ? '已点赞' : '点赞'}</button>
+                        <button id="followBtn" class="action-btn ${data.is_following_author ? 'following' : ''}" onclick="toggleFollow()">👤 ${data.is_following_author ? '已关注' : '关注作者'}</button>
+                        <button class="action-btn" onclick="shareArticle()">🔄 分享</button>
+                        <button class="action-btn" onclick="reportArticle()">🚫 举报</button>
+                    </div>
+                    <div style="margin-top:20px;">
+                        <h4 style="margin-bottom:10px;">💬 评论 (${data.comments ? data.comments.length : 0})</h4>
+                        <textarea id="commentInput" class="comment-input" rows="3" placeholder="发表评论..."></textarea>
+                        <button onclick="postComment()" style="padding:8px 16px; background:#667eea; color:white; border:none; border-radius:8px; cursor:pointer;">发表评论</button>
+                        <div id="commentsList" style="margin-top:15px;">${renderComments(data.comments || [])}</div>
+                    </div>
+                `;
+            } catch(e) { modalBody.innerHTML = '<div style="color:red;">❌ 加载失败</div>'; }
+        }
+
+        function renderComments(comments) {
+            if(!comments || comments.length === 0) return '<div style="color:#999; text-align:center;">暂无评论，快来抢沙发！</div>';
+            return comments.map(c => `
+                <div class="comment-item">
+                    <span class="comment-user">${escapeHtml(c.user_id)}</span>
+                    <span class="comment-time">${c.time}</span>
+                    <div class="comment-content">${escapeHtml(c.content)}</div>
+                </div>
+            `).join('');
+        }
+
+        async function toggleFavorite() {
+            const btn = document.getElementById('favoriteBtn');
+            const isFavorited = btn.classList.contains('favorited');
+            const action = isFavorited ? 'remove' : 'add';
+            try {
+                const res = await fetch(`${API_BASE}/api/favorite`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUserId || 'U00001', article_id: currentArticleId, action })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    if(action === 'add') { btn.classList.add('favorited'); btn.innerHTML = '⭐ 已收藏'; }
+                    else { btn.classList.remove('favorited'); btn.innerHTML = '⭐ 收藏'; }
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function toggleLike() {
+            const btn = document.getElementById('likeBtn');
+            const isLiked = btn.classList.contains('liked');
+            const action = isLiked ? 'remove' : 'add';
+            try {
+                const res = await fetch(`${API_BASE}/api/like`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUserId || 'U00001', article_id: currentArticleId, action })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    if(action === 'add') { btn.classList.add('liked'); btn.innerHTML = '❤️ 已点赞'; }
+                    else { btn.classList.remove('liked'); btn.innerHTML = '❤️ 点赞'; }
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function toggleFollow() {
+            const btn = document.getElementById('followBtn');
+            const isFollowing = btn.classList.contains('following');
+            const action = isFollowing ? 'remove' : 'add';
+            try {
+                const res = await fetch(`${API_BASE}/api/follow`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUserId || 'U00001', author: currentArticleData?.author, action })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    if(action === 'add') { btn.classList.add('following'); btn.innerHTML = '👤 已关注'; }
+                    else { btn.classList.remove('following'); btn.innerHTML = '👤 关注作者'; }
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function shareArticle() {
+            try {
+                await fetch(`${API_BASE}/api/share`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ article_id: currentArticleId })
+                });
+                alert('分享成功！');
+            } catch(e) { console.error(e); }
+        }
+
+        async function reportArticle() {
+            const reason = prompt('请输入举报原因：');
+            if(!reason) return;
+            try {
+                await fetch(`${API_BASE}/api/report`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ article_id: currentArticleId, reason })
+                });
+                alert('举报已提交，我们会尽快处理');
+            } catch(e) { console.error(e); }
+        }
+
+        async function postComment() {
+            const content = document.getElementById('commentInput').value.trim();
+            if(!content) { alert('请输入评论内容'); return; }
+            try {
+                const res = await fetch(`${API_BASE}/api/comment`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUserId || 'U00001', article_id: currentArticleId, content })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    document.getElementById('commentInput').value = '';
+                    const commentsList = document.getElementById('commentsList');
+                    const newComment = `<div class="comment-item"><span class="comment-user">${currentUserId || 'U00001'}</span><span class="comment-time">${new Date().toLocaleString()}</span><div class="comment-content">${escapeHtml(content)}</div></div>`;
+                    if(commentsList.innerHTML.includes('暂无评论')) commentsList.innerHTML = newComment;
+                    else commentsList.innerHTML = newComment + commentsList.innerHTML;
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function closeModal() { document.getElementById('detailModal').style.display = 'none'; }
+        window.onclick = function(e) { if(e.target === document.getElementById('detailModal')) closeModal(); }
+        function escapeHtml(t) { if(!t) return ''; return t.replace(/[&<>]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m; }); }
+        function formatNumber(n) { if(n >= 10000) return (n/10000).toFixed(1) + 'w'; if(n >= 1000) return (n/1000).toFixed(1) + 'k'; return n; }
+    </script>
+</body>
+</html>
