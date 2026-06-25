@@ -2,7 +2,7 @@
 
 ## 项目简介
 
-基于 Python 开发的混合检索与推荐系统，融合了 TF-IDF、BM25、布尔检索、短语检索、语义检索 5 种检索算法，以及协同过滤、基于内容推荐、加权混合、级联混合、Switch 混合等多种推荐策略。系统提供完整的 Web 可视化界面，支持文章收藏、点赞、评论、关注作者等用户互动功能。
+基于 Python 开发的混合检索与推荐系统，基于3000篇新闻数据与500名用户偏好数据构建，融合了 TF-IDF、BM25、布尔检索、短语检索、语义检索 5 种检索算法，以及协同过滤、基于内容推荐、加权混合、级联混合、Switch 混合等多种推荐策略。系统提供完整的 Web 可视化界面，支持文章收藏、点赞、评论、关注作者等用户互动功能。
 
 ## 核心功能
 
@@ -17,7 +17,7 @@
 
 | 技术 | 用途 |
 |------|------|
-| Python 3.8+ | 编程语言 |   | Python 3.8  | 编程语言 |
+| Python 3.8+ | 编程语言 |
 | Flask | Web 后端框架 |
 | scikit-learn | TF-IDF 向量化、相似度计算 |
 | gensim | Word2Vec 语义检索 |
@@ -26,38 +26,40 @@
 | matplotlib | 可视化图表 |
 | HTML / CSS / JS | 前端界面 |
 
-## 运行说明
+## 在线体验
+
+在线演示地址：https://mbabmmm.pythonanywhere.com/
 
 ### 环境要求
-- Python 3.8+   - Python 3.8
+- Python 3.8+  
 - pip 包管理工具
 
 ### 1. 克隆项目
 ```bash   ”“bash
-git clone https://github.com/mbabmmmm/Hybrid-Search-Recommendation-System.git
-cd Hybrid-Search-Recommendation-System
+git clone https://github.com/mbabmmmm/news-retrieval-recommendation-system.git
+cd news-retrieval-recommendation-system
 ```
 
 ### 2. 安装依赖
-```bash   ”“bash
-pip install -r requirements.txtPIP install -r requirements.txt
+```bash  
+pip install -r requirements.txt
 ```
 
 ### 3. 配置数据路径
 在 `config.py` 中配置数据文件路径：
-```python   ”“python
-NEWS_DATA_PATH = Path(r"你的路径/新闻数据.txt")NEWS_DATA_PATH = Path(r"你的路径/新闻数据.txt")
-USER_DATA_PATH = Path(r"你的路径/用户偏好数据.json")USER_DATA_PATH = Path(r"你的路径/用户偏好数据.json")
+```python  
+NEWS_DATA_PATH = Path(r"你的路径/新闻数据.txt")
+USER_DATA_PATH = Path(r"你的路径/用户偏好数据.json")
 ```
 
-### 4. 运行 Web 界面
-```bash   ”“bash
+### 4. 运行 Web 界面（本地部署，自己查看），不部署想直接查看请转至“在线体验”
+```bash  
 python app.py
 ```
 在浏览器中打开 `http://localhost:5000`
 
 ### 5. 命令行模式
-```bash   ”“bash
+```bash   
 python main.py
 ```
 
@@ -73,6 +75,8 @@ python main.py
 | 短语检索 | 52% | 1.58% | 1.00 | 精确匹配要求高 |
 | 语义检索 | 100% | 2.97% | 1.02 | 语义理解能力强 |
 
+关于 Recall 偏低的说明：Recall@10 约为 3% 的主要原因在于，当前相关性标注采用严格匹配标准——查询词需要精确出现在文档的标题、类别或关键词中才被认定为相关，而语义上相关但词形不同的文档并未纳入 ground truth，因此实际被检索到的语义相关文档在评估中被标记为"不相关"，导致召回率统计偏低。未来可通过引入语义扩展（如同义词扩展、词向量近邻匹配）以及采用多级相关性标注（如"强相关/弱相关/不相关"）等方式，使评估指标更全面地反映检索系统的实际效果。
+
 ### 推荐系统评估
 
 | 推荐策略 | Precision@10 | Hit Ratio | 评价 |
@@ -81,6 +85,7 @@ python main.py
 | Cascade 混合 | 12.8% | 62.5% | 受CF质量影响 |
 | Switch 混合 | 80.0% | 80.0% | 效果最好 |
 | Rank 混合 | 27.3% | 83.3% | 命中率高 |
+
 ## 核心算法
 
 | 模块 | 算法 | 说明 |
